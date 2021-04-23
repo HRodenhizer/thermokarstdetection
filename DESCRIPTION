@@ -1,15 +1,14 @@
 Package: thermokarstdetection
-Title: What the Package Does (One Line, Title Case)
+Title: Detect Thermokarst from Elevation
 Version: 0.0.0.9000
 Authors@R: 
-    person(given = "First",
-           family = "Last",
+    person(given = "Heidi",
+           family = "Rodenhizer",
            role = c("aut", "cre"),
-           email = "first.last@example.com",
-           comment = c(ORCID = "YOUR-ORCID-ID"))
-Description: What the package does (one paragraph).
-License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
-    license
+           email = "hgr7@nau.edu",
+           comment = c(ORCID = "0000-0001-5824-3302"))
+Description: Detect thermokarst features in permafrost terrain from a single digital terrain model. This function compares each cells elevation to a circular neighborhood median elevation to detect cells which are lower than the surrounding landscape.
+License: GPL (>= 3)
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
