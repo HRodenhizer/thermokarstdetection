@@ -1,3 +1,17 @@
+#' Detect Thermokarst from Elevation
+#'
+#' Detect thermokarst features by comparing the elevation in each cell of a
+#' digital terrain model to the median elevation in a circular neighborhood.
+#'
+#' @param elev
+#' @param radii
+#' @param cutoff
+#' @param n.cores
+#'
+#' @return
+#' @export
+#'
+#' @examples
 tk_detect <- function(elev, radii = 15, cutoff = 0, n.cores = 1) {
 
   if (detectCores() < n.cores) {
