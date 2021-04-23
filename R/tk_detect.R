@@ -3,12 +3,20 @@
 #' Detect thermokarst features by comparing the elevation in each cell of a
 #' digital terrain model to the median elevation in a circular neighborhood.
 #'
-#' @param elev
-#' @param radii
-#' @param cutoff
-#' @param n.cores
+#' @param elev A raster of elevation.
+#' @param radii A number or numeric vector of neighborhood sizes in number of
+#' cells.
+#' @param cutoff The cut-off value to use when reclassifying microtopography as
+#' thermokarst.
+#' @param n.cores The number of cores to use.
 #'
-#' @return
+#' @return A list containing the cutoff value used, the radii used, elev.crop,
+#' med.elev, microtopography, and thermokarst. Elev.crop is an elevation
+#' raster cropped to the final output size. Med.elev is a raster of the median
+#' elevation values. Microtopography is the cropped elevation minus the median
+#' elevation, such that negative values indicate a low spot on the landscape
+#' which may be thermokarst. Thermokarst is a raster of the thermokarst
+#' classification: thermokarst (1) or non-thermokarst (0).
 #' @export
 #'
 #' @examples
