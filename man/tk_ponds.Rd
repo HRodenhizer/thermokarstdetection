@@ -5,7 +5,7 @@
 \alias{tk_ponds}
 \title{Elevation raster (DTM) of some thermokarst pits.}
 \format{
-A Large RasterBrick with two layers and 40,000 cells.
+A RasterBrick.
 }
 \source{
 \url{https://data.neonscience.org/data-products/DP3.30024.001}
