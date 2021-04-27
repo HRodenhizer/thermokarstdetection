@@ -1,18 +1,20 @@
 #' Detect Thermokarst from Elevation
 #'
 #' Detect thermokarst features by comparing the elevation in each cell of a
-#' digital terrain model to the median elevation in a circular neighborhood.
+#' digital terrain model to the average elevation in a circular neighborhood.
 #'
 #' @param elev A raster of elevation.
 #' @param radii A number or numeric vector of neighborhood sizes in number of
 #' cells.
+#' @param fun The function to use to determine average elevation. Either median
+#' or mean.
 #' @param cutoff The cut-off value to use when reclassifying microtopography as
 #' thermokarst.
 #' @param n.cores The number of cores to use.
 #'
 #' @return A list containing the cutoff value used, the radii used, elev.crop,
-#' med.elev, microtopography, and thermokarst. Elev.crop is an elevation
-#' raster cropped to the final output size. Med.elev is a raster of the median
+#' avg.elev, microtopography, and thermokarst. Elev.crop is an elevation
+#' raster cropped to the final output size. avg.elev is a raster of the median
 #' elevation values. Microtopography is the cropped elevation minus the median
 #' elevation, such that negative values indicate a low spot on the landscape
 #' which may be thermokarst. Thermokarst is a raster of the thermokarst
@@ -24,7 +26,8 @@
 #' @importFrom foreach %:%
 #'
 #' @examples
-tk_detect <- function(elev, radii = 15, cutoff = 0, n.cores = 1) {
+tk_detect <- function(elev, radii = 15, fun = 'median', cutoff = 0,
+                      n.cores = 1) {
 
   if (parallel::detectCores() < n.cores) {
 
@@ -40,8 +43,8 @@ tk_detect <- function(elev, radii = 15, cutoff = 0, n.cores = 1) {
     # calculate output extent based on extent of non-NA values after
     # calculating median elevation with the largest radius
     new.extent <- raster::extend(elev.extent,
-                                 c(rep(-1*(max(radii)*resolution[[1]] + resolution[[1]]), 2),
-                                   rep(-1*(max(radii)*resolution[[2]] + resolution[[2]]), 2)))
+                                 c(rep(-1*max(radii)*resolution[[1]], 2),
+                                   rep(-1*max(radii)*resolution[[2]], 2)))
 
     # Crop elevation to output extent
     elev.crop <- raster::crop(elev,
@@ -66,7 +69,7 @@ tk_detect <- function(elev, radii = 15, cutoff = 0, n.cores = 1) {
     if (n.cores == 1) {
 
       # create empty output lists for each radius
-      med.elev <- list()
+      avg.elev <- list()
       microtopography <- list()
       thermokarst <- list()
 
@@ -77,13 +80,18 @@ tk_detect <- function(elev, radii = 15, cutoff = 0, n.cores = 1) {
         if (n.layers == 1) {
 
           # calculate median and crop output
-          med.elev[[i]] <- raster::crop(raster::focal(elev, weights[[i]], fun = median),
-                                        new.extent)
-          names(med.elev)[[i]] <- paste0('med.elev.', radii[i])
-          names(med.elev[[i]]) <- paste0('med.elev.', radii[i], '.', names(elev))
+          if (fun == 'median') {
+            avg.elev[[i]] <- raster::crop(raster::focal(elev, weights[[i]], fun = median),
+                                          new.extent)
+          } else if (fun == 'mean') {
+            avg.elev[[i]] <- raster::crop(raster::focal(elev, weights[[i]], fun = mean),
+                                          new.extent)
+          }
+          names(avg.elev)[[i]] <- paste0('avg.elev.', radii[i])
+          names(avg.elev[[i]]) <- paste0('avg.elev.', radii[i], '.', names(elev))
 
           # calculate microtopography
-          microtopography[[i]] <- elev.crop - med.elev[[i]]
+          microtopography[[i]] <- elev.crop - avg.elev[[i]]
           names(microtopography)[[i]] <- paste0('microtopography.', radii[i])
           names(microtopography[[i]]) <- paste0('microtopography.', radii[i], '.', names(elev))
 
@@ -96,19 +104,24 @@ tk_detect <- function(elev, radii = 15, cutoff = 0, n.cores = 1) {
         } else if (n.layers > 1) {
 
           # create empty output lists for each layer nested within radius
-          med.elev[[i]] <- list()
+          avg.elev[[i]] <- list()
           microtopography[[i]] <- list()
           thermokarst[[i]] <- list()
 
           for (j in 1:n.layers) {
 
             # calculate median and crop output
-            med.elev[[i]][[j]] <- raster::crop(raster::focal(elev[[j]], weights[[i]], fun = median),
-                                               new.extent)
-            names(med.elev[[i]])[[j]] <- paste0('med.elev.', radii[i], '.', names(elev[[j]]))
+            if (fun == 'median') {
+              avg.elev[[i]][[j]] <- raster::crop(raster::focal(elev[[j]], weights[[i]], fun = median),
+                                            new.extent)
+            } else if (fun == 'mean') {
+              avg.elev[[i]][[j]] <- raster::crop(raster::focal(elev[[j]], weights[[i]], fun = mean),
+                                            new.extent)
+            }
+            names(avg.elev[[i]])[[j]] <- paste0('avg.elev.', radii[i], '.', names(elev[[j]]))
 
             # calculate microtopography
-            microtopography[[i]][[j]] <- elev.crop[[j]] - med.elev[[i]][[j]]
+            microtopography[[i]][[j]] <- elev.crop[[j]] - avg.elev[[i]][[j]]
             names(microtopography[[i]])[[j]] <- paste0('microtopography.', radii[i], '.', names(elev[[i]]))
 
             # reclassify microtopography as thermokarst
@@ -118,8 +131,8 @@ tk_detect <- function(elev, radii = 15, cutoff = 0, n.cores = 1) {
           }
 
           # convert lists of layers to rasterBrick and name list elements
-          med.elev[[i]] <- raster::brick(med.elev[[i]])
-          names(med.elev)[[i]] <- paste0('med.elev.', radii[i])
+          avg.elev[[i]] <- raster::brick(avg.elev[[i]])
+          names(avg.elev)[[i]] <- paste0('avg.elev.', radii[i])
           microtopography[[i]] <- raster::brick(microtopography[[i]])
           names(microtopography)[[i]] <- paste0('microtopography.', radii[i])
           thermokarst[[i]] <- raster::brick(thermokarst[[i]])
@@ -139,14 +152,19 @@ tk_detect <- function(elev, radii = 15, cutoff = 0, n.cores = 1) {
       if (n.layers == 1) {
 
         # calculate median and crop output
-        med.elev <- foreach::foreach(i=1:length(radii), .packages = 'raster') %dopar% {
+        avg.elev <- foreach::foreach(i=1:length(radii), .packages = 'raster') %dopar% {
+          if (fun == 'median') {
           raster::crop(raster::focal(elev, weights[[i]], fun = median),
                        new.extent)
+          } else if (fun == 'mean') {
+            raster::crop(raster::focal(elev, weights[[i]], fun = mean),
+                         new.extent)
+          }
         }
 
         # calculate microtopography
         microtopography <- foreach::foreach(i=1:length(radii), .packages = 'raster') %dopar% {
-          elev.crop - med.elev[[i]]
+          elev.crop - avg.elev[[i]]
         }
 
         # reclassify microtopography as thermokarst
@@ -157,16 +175,21 @@ tk_detect <- function(elev, radii = 15, cutoff = 0, n.cores = 1) {
       } else if (n.layers > 1) {
 
         # calculate median and crop output
-        med.elev <- foreach::foreach(i=1:length(radii), .packages = 'raster') %:%
+        avg.elev <- foreach::foreach(i=1:length(radii), .packages = 'raster') %:%
           foreach::foreach(j=1:n.layers, .packages = 'raster', .combine = 'brick') %dopar% {
-            raster::crop(raster::focal(elev[[j]], weights[[i]], fun = median),
-                         new.extent)
+            if (fun == 'median') {
+              raster::crop(raster::focal(elev[[j]], weights[[i]], fun = median),
+                           new.extent)
+            } else if (fun == 'mean') {
+              raster::crop(raster::focal(elev[[j]], weights[[i]], fun = mean),
+                           new.extent)
+            }
           }
 
         # calculate microtopography
         microtopography <- foreach::foreach(i=1:length(radii), .packages = 'raster') %:%
           foreach::foreach(j=1:n.layers, .packages = 'raster', .combine = 'brick') %dopar% {
-            elev.crop[[j]] - med.elev[[i]][[j]]
+            elev.crop[[j]] - avg.elev[[i]][[j]]
           }
 
         # reclassify microtopography as thermokarst
@@ -182,12 +205,12 @@ tk_detect <- function(elev, radii = 15, cutoff = 0, n.cores = 1) {
 
       # name output
       for (i in 1:length(radii)) {
-        names(med.elev[[i]]) <- paste0('med.elev.', radii[i], '.', names(elev))
+        names(avg.elev[[i]]) <- paste0('avg.elev.', radii[i], '.', names(elev))
         names(microtopography[[i]]) <- paste0('microtopography.', radii[i], '.', names(elev))
         names(thermokarst[[i]]) <- paste0('thermokarst.', radii[i], '.', names(elev))
       }
 
-      names(med.elev) <- paste0('med.elev.', radii)
+      names(avg.elev) <- paste0('avg.elev.', radii)
       names(microtopography) <- paste0('microtopography.', radii)
       names(thermokarst) <- paste0('thermokarst.', radii)
 
@@ -197,13 +220,13 @@ tk_detect <- function(elev, radii = 15, cutoff = 0, n.cores = 1) {
     output <- list(cutoff,
                    radii,
                    elev.crop,
-                   med.elev,
+                   avg.elev,
                    microtopography,
                    thermokarst)
     names(output) <- c('cutoff.value',
                        'radii',
                        'elev.crop',
-                       'med.elev',
+                       'avg.elev',
                        'microtopography',
                        'thermokarst')
     return(output)
