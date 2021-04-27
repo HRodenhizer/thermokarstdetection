@@ -24,6 +24,7 @@
 #' @importFrom stats median
 #' @importFrom foreach %dopar%
 #' @importFrom foreach %:%
+#' @importFrom raster brick
 #'
 #' @examples
 tk_detect <- function(elev, radii = 15, fun = 'median', cutoff = 0,
@@ -62,6 +63,10 @@ tk_detect <- function(elev, radii = 15, fun = 'median', cutoff = 0,
     # create reclassification matrix using the provided cut-off value
     reclass.matrix <- matrix(c(-Inf,cutoff,1, cutoff,Inf,0), ncol = 3, byrow = TRUE)
 
+    # create category table
+    rat <- data.frame(ID = seq(0, 1),
+                      Class = c('Non-Thermokarst',
+                                'Thermokarst'))
 
     ### Calculate median elevation, microtopography, and thermokarst
     # different methods used depending on number of cores requested
@@ -97,6 +102,8 @@ tk_detect <- function(elev, radii = 15, fun = 'median', cutoff = 0,
 
           # reclassify microtopography as thermokarst
           thermokarst[[i]] <- raster::reclassify(microtopography[[i]], reclass.matrix)
+          thermokarst[[i]] <- raster::ratify(thermokarst[[i]])
+          levels(thermokarst[[i]]) <- rat
           names(thermokarst)[[i]] <- paste0('thermokarst.', radii[i])
           names(thermokarst[[i]]) <- paste0('thermokarst.', radii[i], '.', names(elev))
 
@@ -126,6 +133,8 @@ tk_detect <- function(elev, radii = 15, fun = 'median', cutoff = 0,
 
             # reclassify microtopography as thermokarst
             thermokarst[[i]][[j]] <- raster::reclassify(microtopography[[i]][[j]], reclass.matrix)
+            thermokarst[[i]][[j]] <- raster::ratify(thermokarst[[i]][[j]])
+            levels(thermokarst[[i]][[j]]) <- rat
             names(thermokarst[[i]])[[j]] <- paste0('thermokarst.', radii[i], '.', names(elev[[i]]))
 
           }
@@ -169,7 +178,12 @@ tk_detect <- function(elev, radii = 15, fun = 'median', cutoff = 0,
 
         # reclassify microtopography as thermokarst
         thermokarst <- foreach::foreach(i=1:length(radii), .packages = 'raster') %dopar% {
-          raster::reclassify(microtopography[[i]], reclass.matrix)
+          raster::ratify(raster::reclassify(microtopography[[i]], reclass.matrix))
+          }
+
+        # Set raster category levels
+        for (i in 1:length(thermokarst)) {
+          levels(thermokarst[[i]]) <- rat
         }
 
       } else if (n.layers > 1) {
@@ -195,8 +209,15 @@ tk_detect <- function(elev, radii = 15, fun = 'median', cutoff = 0,
         # reclassify microtopography as thermokarst
         thermokarst <- foreach::foreach(i=1:length(radii), .packages = 'raster') %:%
           foreach::foreach(j=1:n.layers, .packages = 'raster', .combine = 'brick') %dopar% {
-            raster::reclassify(microtopography[[i]][[j]], reclass.matrix)
+            raster::ratify(raster::reclassify(microtopography[[i]][[j]], reclass.matrix))
+            }
+
+        # Set raster category levels
+        for (i in 1:length(thermokarst)) {
+          for (j in 1:raster::nlayers(thermokarst[[i]])) {
+            levels(thermokarst[[i]][[j]]) <- rat
           }
+        }
 
       }
 
@@ -215,6 +236,8 @@ tk_detect <- function(elev, radii = 15, fun = 'median', cutoff = 0,
       names(thermokarst) <- paste0('thermokarst.', radii)
 
     }
+
+    ### Make thermokarst output categorical
 
     ### Create list of output
     output <- list(cutoff,
