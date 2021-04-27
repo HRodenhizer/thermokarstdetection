@@ -4,8 +4,8 @@
 #' digital terrain model to the average elevation in a circular neighborhood.
 #'
 #' @param elev A raster of elevation.
-#' @param radii A number or numeric vector of neighborhood sizes in number of
-#' cells.
+#' @param radii A number or numeric vector of neighborhood sizes (in units of
+#' the crs).
 #' @param fun The function to use to determine average elevation. Either median
 #' or mean.
 #' @param cutoff The cut-off value to use when reclassifying microtopography as
@@ -44,8 +44,8 @@ tk_detect <- function(elev, radii = 15, fun = 'median', cutoff = 0,
     # calculate output extent based on extent of non-NA values after
     # calculating median elevation with the largest radius
     new.extent <- raster::extend(elev.extent,
-                                 c(rep(-1*max(radii)*resolution[[1]], 2),
-                                   rep(-1*max(radii)*resolution[[2]], 2)))
+                                 c(rep(-1*max(radii), 2),
+                                   rep(-1*max(radii), 2)))
 
     # Crop elevation to output extent
     elev.crop <- raster::crop(elev,

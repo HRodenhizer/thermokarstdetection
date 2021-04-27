@@ -9,8 +9,8 @@ tk_detect(elev, radii = 15, fun = "median", cutoff = 0, n.cores = 1)
 \arguments{
 \item{elev}{A raster of elevation.}
 
-\item{radii}{A number or numeric vector of neighborhood sizes in number of
-cells.}
+\item{radii}{A number or numeric vector of neighborhood sizes (in units of
+the crs).}
 
 \item{fun}{The function to use to determine average elevation. Either median
 or mean.}
