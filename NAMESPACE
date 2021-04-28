@@ -3,4 +3,5 @@
 export(tk_detect)
 importFrom(foreach,"%:%")
 importFrom(foreach,"%dopar%")
+importFrom(raster,brick)
 importFrom(stats,median)
