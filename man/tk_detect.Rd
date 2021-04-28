@@ -33,3 +33,6 @@ classification: thermokarst (1) or non-thermokarst (0).
 Detect thermokarst features by comparing the elevation in each cell of a
 digital terrain model to the average elevation in a circular neighborhood.
 }
+\examples{
+tk_detect(tk_ponds)
+}

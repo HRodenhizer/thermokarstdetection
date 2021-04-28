@@ -27,6 +27,7 @@
 #' @importFrom raster brick
 #'
 #' @examples
+#' tk_detect(tk_ponds)
 tk_detect <- function(elev, radii = 15, fun = 'median', cutoff = 0,
                       n.cores = 1) {
 
@@ -240,14 +241,16 @@ tk_detect <- function(elev, radii = 15, fun = 'median', cutoff = 0,
     ### Make thermokarst output categorical
 
     ### Create list of output
-    output <- list(cutoff,
-                   radii,
+    output <- list(radii,
+                   fun,
+                   cutoff,
                    elev.crop,
                    avg.elev,
                    microtopography,
                    thermokarst)
-    names(output) <- c('cutoff.value',
-                       'radii',
+    names(output) <- c('radii',
+                       'fun',
+                       'cutoff',
                        'elev.crop',
                        'avg.elev',
                        'microtopography',

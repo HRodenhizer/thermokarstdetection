@@ -1,6 +1,6 @@
 test_that("output is of correct type when input is a RasterLayer", {
   output <- tk_detect(tk_ponds[[1]])
-  expect_type(output$cutoff.value, "double")
+  expect_type(output$cutoff, "double")
   expect_type(output$radii, "double")
   expect_s4_class(output$elev.crop, "RasterLayer")
   expect_s4_class(output$avg.elev[[1]], "RasterLayer")
@@ -12,7 +12,7 @@ test_that("output is of correct type when input is a RasterLayer", {
 
 test_that("output is of correct type when input is a RasterBrick", {
   output <- tk_detect(tk_ponds)
-  expect_type(output$cutoff.value, "double")
+  expect_type(output$cutoff, "double")
   expect_type(output$radii, "double")
   expect_s4_class(output$elev.crop, "RasterBrick")
   expect_s4_class(output$avg.elev[[1]], "RasterBrick")
@@ -24,7 +24,7 @@ test_that("output is of correct type when input is a RasterBrick", {
 
 test_that("output is of correct type when input is a RasterLayer and n.cores > 1", {
   output <- tk_detect(tk_ponds[[1]], n.cores = 2)
-  expect_type(output$cutoff.value, "double")
+  expect_type(output$cutoff, "double")
   expect_type(output$radii, "double")
   expect_s4_class(output$elev.crop, "RasterLayer")
   expect_s4_class(output$avg.elev[[1]], "RasterLayer")
@@ -37,7 +37,7 @@ test_that("output is of correct type when input is a RasterLayer and n.cores > 1
 test_that("output is of correct type when input is a RasterBrick and
           n.cores > 1", {
   output <- tk_detect(tk_ponds, n.cores = 2)
-  expect_type(output$cutoff.value, "double")
+  expect_type(output$cutoff, "double")
   expect_type(output$radii, "double")
   expect_s4_class(output$elev.crop, "RasterBrick")
   expect_s4_class(output$avg.elev[[1]], "RasterBrick")
@@ -88,11 +88,11 @@ test_that("output is being cropped to exclude NA values", {
   expect_false(any(is.na(raster::getValues(output$thermokarst[[1]]))))
 })
 
-test_that("neighborhood size is correct" {
+test_that("neighborhood size is correct", {
   tk_ponds_coarse <- raster::aggregate(tk_ponds, fact = 2)
   output1 <- tk_detect(tk_ponds[[1]])
   output2 <- tk_detect(tk_ponds_coarse[[1]])
-  expect_equal(extent(output1$thermokarst[[1]]),
-               extent(output2$thermokarst[[1]]),
+  expect_equal(raster::extent(output1$thermokarst[[1]]),
+               raster::extent(output2$thermokarst[[1]]),
                tolerance = 1)
 })
